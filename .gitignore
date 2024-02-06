@@ -7,5 +7,5 @@ fb_key.json
 /static/graphs/biomass/*.png
 *.ipynb
 *.png
-sendgrip_api_key.txt
+sendgrid_api_key.txt
 alert_recipients.txt
