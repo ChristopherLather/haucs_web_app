@@ -2,6 +2,7 @@
 fb_key.json
 *_timeseries.png
 .DS_store
+/static/graphs/
 /static/graphs/haucs/*.png
 /static/graphs/biomass/*.png
 *.ipynb
