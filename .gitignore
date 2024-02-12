@@ -8,4 +8,5 @@ fb_key.json
 *.ipynb
 *.png
 sendgrid_api_key.txt
-alert_recipients.txt
+bmass_recipients.txt
+egg_recipients.txt
