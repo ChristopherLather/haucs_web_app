@@ -1,12 +1,13 @@
 /__pycache__ 
 fb_key.json
-*_timeseries.png
 .DS_store
-/static/graphs/
-/static/graphs/haucs/*.png
-/static/graphs/biomass/*.png
+/static/graphs
 *.ipynb
+<<<<<<< HEAD
 *.png
 sendgrid_api_key.txt
 bmass_recipients.txt
 egg_recipients.txt
+=======
+*.png
+>>>>>>> 3e893d2dd02122145c577689cfa183bb74c92dcb

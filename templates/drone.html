@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+
+{% block head %}
+
+<title>Drone</title>
+<link rel="stylesheet" href="/static/css/sensors.css">
+
+{% endblock %}
+
+{% block body %}
+
+<body class="sensor-body">
+  <script>
+    function updateData(){
+      fetch('/data/LH_Farm drone ' + "{{ id }}")
+        .then(response => response.json())
+        .then(json => {
+          if (json) {
+            console.log(json.data.msg)
+            document.getElementById('msg').textContent = json.data.msg;
+            document.getElementById('flight_mode').textContent = json.data.flight_mode;
+            document.getElementById('flight_status').textContent = json.data.flight_status;
+            document.getElementById('on_water').textContent = json.data.on_water;
+            document.getElementById('vel').textContent = json.data.vel;
+            document.getElementById('alt').textContent = json.data.alt;
+            document.getElementById('lat').textContent = json.data.lat;
+            document.getElementById('lon').textContent = json.data.lon;
+            document.getElementById('hdg').textContent = json.data.hdg;
+            document.getElementById('GLOBAL_POSITION_INT').textContent = json.time.GLOBAL_POSITION_INT;
+            document.getElementById('voltage').textContent = json.data.voltage;
+            document.getElementById('current').textContent = json.data.current;
+            document.getElementById('BATTERY_STATUS').textContent = json.time.BATTERY_STATUS;
+            document.getElementById('NAMED_VALUE_FLOAT').textContent = json.time.NAMED_VALUE_FLOAT;
+            document.getElementById('p_DO').textContent = json.data.p_DO;
+            document.getElementById('p_pres').textContent = json.data.p_pres;
+            document.getElementById('p_temp').textContent = json.data.p_temp;
+          }
+        })
+    }
+    updateData()
+    setInterval(updateData, 2000);
+  </script>
+  <h2>{{ id }}</h2>
+  <ul> 
+    <br>
+    <li><span id="msg"></span></li>
+    <br>
+    <h2>Flight Information</h2>
+    <li>mode: <span id="flight_mode"></span></li>
+    <li>status:  <span id="flight_status"></span></li>
+    <li>on water: <span id="on_water"></span></li>
+    <br>
+    <h2>Position Information</h2>
+    <li>velocity: <span id="vel"></span> m/s</li>
+    <li>altitude: <span id="alt"></span> m</li>
+    <li>latitude: <span id="lat"></span></li>
+    <li>longitude: <span id="lon"></span></li>
+    <li>heading: <span id="hdg"></span> deg</li>
+    <li>last update: <span id="GLOBAL_POSITION_INT"></span> s</li>
+    <br>
+    <h2>Vehicle Health</h2>
+    <li>battery voltage: <span id="voltage"></span></li>
+    <li>battery current: <span id="current"></span></li>
+    <li>last update: <span id="BATTERY_STATUS"></span> s</li>
+    <br>
+    <h2>Payload</h2>
+    <li>DO: <span id="p_DO"></span> mV</li>
+    <li>pressure: <span id="p_pres"></span> hPa</li>
+    <li>temperature: <span id="p_temp"></span> c</li>
+    <li>last update: <span id="NAMED_VALUE_FLOAT"></span> s</li>
+  </ul>
+</body>
+
+{% endblock %}

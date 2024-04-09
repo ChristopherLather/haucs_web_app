@@ -14,18 +14,15 @@
 {%endblock%}
 
 {%block body%}
-
 <div class="forms">
         <!-- <label for="options">Choose an option:</label> -->
         <h1>Choose an option:</h1>
         <select name="options" id="options" onchange="enablePonds(this)">
-            <option value="">Please select</option>
             <option value="do">Manual DO input</option>
-            <option value="biomass">Manual Biomass input</option>
-            <option value="feedback">Feedback</option>
+            <option value="feedback" selected>Feedback</option>
         </select>
 
-        <form id="ponds" class="d-none">
+        <form id="ponds" class="d-none" method="POST">
             <label for="pond_num">Pond Number</label>
             <input 
                 type="text" 
@@ -38,70 +35,33 @@
                 type="text"
                 id="do"
                 name="do"
-                placeholder="The collected DO percentage is..." >  
+                placeholder="percent saturation" >  
                 
             <input type="submit" value="Submit">
         </form>
 
-        <form id="tanks" class="d-none">
-            <label for="tank_num">Tank Number</label>
-            <input 
-                type="text" 
-                id="tank" 
-                name="tank" 
-                placeholder="The tank number is...">
-            
-            <label for="bms_level">Calculated Biomass</label>    
-            <input
-                type="text"
-                id="biomass"
-                name="biomass"
-                placeholder="The calculated biomass is..." >
-            
-            <input type="submit" value="Submit">
-        </form>
-
-        <form id="feedback" class="d-none">
-            <label for="name">Name</label>
-            <input 
-                type="text" 
-                id="name" 
-                name="name" 
-                placeholder="Your name">
-        
+        <form id="feedback" class="d-none" method="POST">
             <label for="comment">Comment</label>
             <textarea
                 id="comment"
                 name="comment"
-                placeholder="Write something.." 
-                style="height:6%">
-            </textarea>  
+                placeholder="what's broken now..."
+                style="height:6%"></textarea>  
             <input type="submit" value="Submit"> 
         </form>
 
 </div>
 
 <script type="text/javascript">
+    console.log("something")
+    document.getElementById('feedback').classList.remove('d-none');
     function enablePonds(answer) {
         if (answer.value == "do"){
             document.getElementById('ponds').classList.remove('d-none');
-            document.getElementById('tanks').classList.add('d-none');
             document.getElementById('feedback').classList.add('d-none');
         }
-        else if (answer.value == "biomass"){
-            document.getElementById('tanks').classList.remove('d-none');
-            document.getElementById('ponds').classList.add('d-none');
-            document.getElementById('feedback').classList.add('d-none');
-        }
-
         else if (answer.value == "feedback"){
             document.getElementById('feedback').classList.remove('d-none');
-            document.getElementById('tanks').classList.add('d-none');
-            document.getElementById('ponds').classList.add('d-none');
-        }
-        else{
-            document.getElementById('feedback').classList.add('d-none');
-            document.getElementById('tanks').classList.add('d-none');
             document.getElementById('ponds').classList.add('d-none');
         }
     }

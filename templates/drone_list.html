@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+
+{% block head %}
+
+<title>Drone</title>
+<link rel="stylesheet" href="/static/css/sensors.css">
+
+{% endblock %}
+
+{% block body %}
+
+<body class="sensor-body">
+  <h1>Available Drones</h1>
+  <ul>
+    <br>
+    {% for i in keys %}
+    <li><a href="/drone/{{ i }}">{{ i }}</a></li>
+    {% endfor %}
+        
+  </ul>
+</body>
+
+{% endblock %}
