@@ -22,17 +22,17 @@
 
     <div class="data_summary">
         <h1>Data Summary</h1>
-        <div>
-            <li> Dissolved Oxygen: {{last_do}}% </li>
-        </div>
-        <li>Last time of data collection: {{last_time}} on {{last_date}}</li>
+        <li>{{last_date}}</li>
+        <li> Dissolved Oxygen: {{last_do_mgl}} mg/l ({{last_do}}%) </li>
         <li>Water temperature: {{last_temp}} °F</li>
         
     </div>
 
     <div class = "graph">
-        <h1>Temperature and DO<br>Collected over the last 24 hours</h1>
-        <img src="{{ url_for('static', filename='graphs/haucs/' + pond_id|string + '_temp_do_graph.png')}}">
+        <img src="{{ url_for('static', filename='graphs/haucs/' + pond_id|string + '_do_graph.png')}}">
+    </div>
+    <div class = "graph">
+        <img src="{{ url_for('static', filename='graphs/haucs/' + pond_id|string + '_temp_graph.png')}}">
     </div>
 
 </body>

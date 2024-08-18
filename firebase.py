@@ -56,15 +56,114 @@ def to_datetime(dates, tz_aware=True):
         except:
             print(i)
         if tz_aware:
-            tz = pytz.timezone('US/Eastern')
+            # tz = pytz.timezone('US/Eastern')
+            tz = pytz.timezone('UTC')
             i_dt = tz.localize(i_dt)
-
-        dt.append(i_dt)
+            dt.append(i_dt.astimezone(pytz.timezone('US/Eastern')))
+        else:
+            dt.append(i_dt)
     return np.array(dt)  
 
 def get_time_header():
     return time.strftime('%Y%m%d_%H:%M:%S', time.gmtime(time.time()))
 
+def convert_to_mgl(do, t, p, s=0):
+    '''
+    do: dissolved oxygen in percent saturation
+    t: temperature in celcius
+    p: pressure in hPa
+    s: salinity in parts per thousand
+    '''
+    T = t + 273.15 #temperature in kelvin
+    P = p * 9.869233e-4 #pressure in atm
+
+    DO_baseline = np.exp(-139.34411 + 1.575701e5/T - 6.642308e7/np.power(T, 2) + 1.2438e10/np.power(T, 3) - 8.621949e11/np.power(T, 4))
+
+    Fs = np.exp(-s * (0.017674 - 10.754/T + 2140.7/np.power(T, 2)))
+
+    theta = 0.000975 - 1.426e-5 * t + 6.436e-8 * np.power(t, 2)
+    u = np.exp(11.8571 - 3840.7/T - 216961/np.power(T, 2))
+    Fp = (P - u) * (1 - theta * P) / (1 - u) / (1 - theta)
+
+    DO_corrected = DO_baseline * Fs * Fp
+    DO_mgl = do / 100 * DO_corrected
+
+    return DO_mgl
+
+class pond():
+
+    def __init__(self, name, days=3):
+        start = (datetime.now() - timedelta(days)).astimezone(pytz.timezone("UTC")).strftime('%Y%m%d_%H:%M:%S')
+        end = datetime.now().astimezone(pytz.timezone("UTC")).strftime('%Y%m%d_%H:%M:%S')
+        ref = db.reference('/LH_Farm/pond_' + str(name))
+        data = ref.order_by_key().start_at(start).end_at(end).get()
+        self.d_dt = to_datetime(data)
+        if (len(self.d_dt) > 0):
+            final_do = []
+            final_temp = []
+            final_pressure = []
+            init_do = []
+            lat = []
+            lng = []
+            for i in data:
+                if (data[i]['type'] == 'manual') and (len(final_do) != 0):
+                    final_do.append(data[i]['do'])
+                    final_temp.append('nan')
+                    final_pressure.append('nan')
+                    init_do.append('nan')
+                    lat.append('nan')
+                    lng.append('nan')
+
+                else:
+                    pressure = np.array(data[i]['pressure']).astype('float')
+                    do = np.array(data[i]['do']).astype('float')
+                    temp = np.array(data[i]['temp']).astype('float')
+                    initial_do = int(data[i]['init_do'])
+                    if initial_do == 0:
+                        initial_do = 0.01
+
+                    #remove 0s from do
+                    do = do[do != 0]
+                    final_do.append(int(do.mean() / initial_do * 100))
+                    final_temp.append(round(temp.mean() * (9/5) + 32, 2))
+                    final_pressure.append(np.mean(pressure))
+                    #append other variables
+                    init_do.append(initial_do)
+                    lat.append(float(data[i]['lat']))
+                    lng.append(float(data[i]['lng']))
+            
+            
+            self.init_do = np.array(init_do, dtype='float')
+            self.lat = np.array(lat, dtype='float')
+            self.lng = np.array(lng, dtype='float')
+            self.do = np.array(final_do, dtype='float')
+            self.temp =np.array(final_temp, dtype='float')
+            self.temp_c = (self.temp - 32) * 5 / 9
+            self.pressure = np.array(final_pressure, dtype='float')
+            self.do_mgl = convert_to_mgl(self.do, self.temp_c, self.pressure)
+            self.id = str(name)
+
+    def plot_temp_do(self, mv):
+        # Set date format for x-axis labels
+        date_fmt = '%m-%d %H:%M'
+        # Use DateFormatter to set the data to the correct format.
+        date_formatter = mdates.DateFormatter(date_fmt, tz=(pytz.timezone("US/Central")))
+        fig, ax1 = plt.subplots(figsize=(8, 5))
+        ax1.plot(self.d_dt, self.do_mgl, 'o-', color='r')
+        ax1.set_ylabel('mg/l', fontsize=14)
+        plt.title('Dissolved Oxygen')
+        plt.gcf().autofmt_xdate()
+        plt.gca().xaxis.set_major_formatter(date_formatter)
+        ax2 = ax1.twinx()
+        ax2.set_ylim(self.do.min(), self.do.max())
+        ax2.set_ylabel("% Saturation", fontsize=14)
+        plt.savefig("static/graphs/haucs/"+ str(self.id) + "_do_graph.png")
+        plt.figure(figsize=(8, 5))
+        plt.plot(self.d_dt, self.temp, 'o-',color= 'c')
+        plt.ylabel("Water temperature (°F)", fontsize=14)
+        plt.gcf().autofmt_xdate()
+        plt.gca().xaxis.set_major_formatter(date_formatter)
+        plt.savefig("static/graphs/haucs/"+ str(self.id) + "_temp_graph.png")
 
 class bmass_sensor():
 
@@ -208,85 +307,6 @@ class egg_sensor():
         plt.gca().xaxis.set_major_formatter(date_formatter)
         plt.savefig("static/graphs/egg/egg_eye_1_peaks.png")
 
-
-
-class pond():
-
-    def __init__(self, name, n):
-        ref = db.reference('/LH_Farm/pond_' + str(name))
-        data = ref.order_by_key().limit_to_last(n).get()
-        final_pressure=[]
-        final_do = []
-        final_temp = []
-        init_do = []
-        lat = []
-        lng = []
-        for i in data:
-            if (data[i]['type'] == 'manual') and (len(final_do) != 0):
-                final_pressure.append('nan')
-                final_do.append(data[i]['do'])
-                final_temp.append('nan')
-                init_do.append('nan')
-                lat.append('nan')
-                lng.append('nan')
-            else:
-                pressure = data[i]['pressure']
-                do = data[i]['do']
-                temp = data[i]['temp']
-                initial_do = int(data[i]['init_do'])
-                if initial_do == 0:
-                    initial_do = 0.01
-                #find highest pressure
-                high_pressure = max(pressure)
-                index_hp = pressure.index(high_pressure)
-                high_pressure = float(high_pressure)
-                #append single value for do, temp, pressure @ high pressure
-                final_pressure.append(high_pressure)
-                final_do.append(int(do[index_hp]) / initial_do * 100)
-                final_temp.append(round(float(temp[index_hp]) * (9/5) + 32, 2))
-                #append other variables
-                init_do.append(initial_do)
-                lat.append(float(data[i]['lat']))
-                lng.append(float(data[i]['lng']))
-        
-        self.d_dt = to_datetime(data)
-        self.init_do = np.array(init_do, dtype='float')
-        self.lat = np.array(lat, dtype='float')
-        self.lng = np.array(lng, dtype='float')
-        self.pressure = np.array(final_pressure, dtype='float')
-        self.do = np.array(final_do, dtype='float')
-        self.temp =np.array(final_temp, dtype='float')
-        self.id = str(name)
-
-    def plot_temp_do(self, mv):
-        # Set date format for x-axis labels
-        date_fmt = '%m-%d %H:%M'
-        # Use DateFormatter to set the data to the correct format.
-        date_formatter = mdates.DateFormatter(date_fmt, tz=(pytz.timezone("US/Eastern")))
-        lower = self.d_dt[-1] - timedelta(hours=24)
-
-        window = self.d_dt > lower
-        data_pts = np.count_nonzero(window)
-
-        if data_pts < mv:
-            mv=data_pts
-        print(self.d_dt[window])
-        plt.figure(figsize=(12,5))
-        plt.subplot(1,2,1)
-        # plt.plot(self.d_dt[window],moving_average(self.do[window],mv), 'o-',color='r')
-        plt.plot(self.d_dt[window], self.do[window], 'o-', color='r')
-        # plt.scatter(self.d_dt[window],self.do[window], color='r')
-        plt.ylabel('Dissolved Oxygen (%)', fontsize=14)
-        plt.gcf().autofmt_xdate()
-        plt.gca().xaxis.set_major_formatter(date_formatter)
-        plt.subplot(1,2,2)
-        # plt.plot(self.d_dt[window], moving_average(self.temp[window],mv), 'o-',color= 'c')
-        plt.plot(self.d_dt[window], self.temp[window], 'o-',color= 'c')
-        plt.ylabel("Water temperature (°F)", fontsize=14)
-        plt.gcf().autofmt_xdate()
-        plt.gca().xaxis.set_major_formatter(date_formatter)
-        plt.savefig("static/graphs/haucs/"+ str(self.id) + "_temp_do_graph.png")
-    
 if __name__ == "__main__":
 
     app = login("fb_key.json")

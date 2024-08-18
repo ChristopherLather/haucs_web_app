@@ -1,0 +1,54 @@
+/* Container for flexboxes */
+.row {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+/* Create four equal columns */
+.column1 {
+  flex: 25%;
+  padding: 20px;
+  box-sizing: border-box;
+}
+.column2 {
+  flex: 50%; /* 50% of the row's width */
+  padding: 20px;
+  box-sizing: border-box; /* Includes padding in the width calculation */
+}
+.table {
+  width: 100%;
+  text-align: left;
+}
+/* Table column widths relative to .column1 */
+td:nth-child(1) {
+  width: 67%;
+}
+
+td:nth-child(2) {
+  width: 33%;
+}
+
+/* Responsive behaviors */
+@media screen and (min-width: 601px) {
+  .column1 {
+    flex: 25%; /* Keeps .column1 at 25% above 600px */
+  }
+  .column2 {
+    flex: 50%; /* Keeps .column2 at 50% above 600px */
+  }
+}
+
+@media screen and (max-width: 600px) and (min-width: 401px) {
+  .column1 {
+    flex: 50%; /* Each .column1 takes 50% of the row's width between 401px and 600px */
+  }
+  .column2 {
+    flex: 100%; /* .column2 takes full width at this breakpoint */
+  }
+}
+
+@media screen and (max-width: 400px) {
+  .column1, .column2 {
+    flex: 100%; /* All columns take full width below 400px */
+  }
+}

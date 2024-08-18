@@ -1,5 +1,5 @@
 from flask import Flask, render_template, jsonify, request
-from datetime import datetime
+from datetime import datetime, timedelta
 import firebase
 import json
 import os
@@ -85,6 +85,17 @@ def data(ref):
     data = db.reference(db_path).get()
     return jsonify(data)
 
+'''
+Data Source: call this from javascript to get fresh data in given time range
+'''
+@app.route('/dataTime/' + '<ref>', methods=['GET'])
+def dataTime(ref):
+    variables = ref.split(' ')
+    db_path = "/".join(variables[:-2])
+    start = variables[-2]
+    end = variables[-1]
+    data = db.reference(db_path).order_by_key().start_at(start).end_at(end).get()
+    return jsonify(data)
 
 @app.route('/drone')
 def drone_list():
@@ -141,16 +152,29 @@ def haucs():
     
     return render_template('HAUCS.html', data=data, do_values=json.dumps(last_do))
 
+@app.route('/history')
+def history():
+    with open('static/json/farm_features.json', 'r') as file:
+        data = file.read()
+    
+    return render_template('history.html', data=data)
+
 @app.route('/pond'+'<pond_id>')
 def show_pond(pond_id):
-    pondx = firebase.pond(pond_id, 48)
-    last_do = round(pondx.do[-1],2)
-    last_temp = round(pondx.temp[-1],2)
-    last_dt = pondx.d_dt[-1]
-    str_date = last_dt.strftime('%A, %B %d')
-    str_time = last_dt.strftime('%I:%M %p')
-    pondx.plot_temp_do(mv=10)
-    return render_template('haucs_analytics.html', pond_id=pond_id, last_date=str_date, last_time = str_time,last_do=last_do, last_temp = last_temp)
+    days = 2
+    pondx = firebase.pond(pond_id, days)
+    last_do = 0
+    last_do_mgl = 0
+    last_temp = 0
+    str_date = f"NO DATA FROM PAST {days} DAYS"
+    if (len(pondx.d_dt) > 0):
+        pondx.plot_temp_do(mv=10)
+        last_do = round(pondx.do[-1],2)
+        last_do_mgl = round(pondx.do_mgl[-1], 2)
+        last_temp = round(pondx.temp[-1],2)
+        last_dt = pondx.d_dt[-1]
+        str_date = last_dt.strftime('%m/%d %I:%M %p')
+    return render_template('haucs_analytics.html', pond_id=pond_id, last_date=str_date, last_do=last_do, last_do_mgl=last_do_mgl, last_temp=last_temp)
 
 @app.route('/recent')
 def recent():
